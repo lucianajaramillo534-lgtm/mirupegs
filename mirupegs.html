@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mirupegs | Monitoreo del Sueño</title>
+    <meta name="description" content="mirupegs: Robot inteligente para monitorear y controlar el ritmo circadiano y el sueño de niños y adultos mayores.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --rojo: #ff4b6e;
+            --azul-prof: #0b132b;
+            --azul-med: #1c2541;
+            --azul-claro: #3a506b;
+            --cyan: #00f0ff;
+            --blanco: #ffffff;
+            --texto: #e2e8f0;
+            --glass: rgba(28,37,65,0.6);
+            --border: rgba(255,255,255,0.1);
+        }
+        * { margin:0; padding:0; box-sizing:border-box; font-family:'Outfit',sans-serif; }
+        html { scroll-behavior: smooth; }
+        body {
+            background: linear-gradient(135deg, var(--azul-prof) 0%, #111827 100%);
+            color: var(--blanco);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+        body::before {
+            content:''; position:fixed; top:-20%; left:-10%;
+            width:50vw; height:50vw;
+            background:radial-gradient(circle,rgba(255,75,110,.12) 0%,transparent 70%);
+            border-radius:50%; z-index:-1; pointer-events:none;
+        }
+        body::after {
+            content:''; position:fixed; bottom:-20%; right:-10%;
+            width:60vw; height:60vw;
+            background:radial-gradient(circle,rgba(0,240,255,.06) 0%,transparent 70%);
+            border-radius:50%; z-index:-1; pointer-events:none;
+        }
+
+        /* NAV */
+        .navbar {
+            background: rgba(11,19,43,.9);
+            backdrop-filter: blur(15px);
+            border-bottom: 1px solid var(--border);
+            padding: 15px 40px;
+            display: flex; justify-content: space-between; align-items: center;
+            flex-wrap: wrap; position: sticky; top:0; z-index:1000;
+            box-shadow: 0 8px 30px rgba(0,0,0,.5);
+        }
+        .logo-container { display:flex; align-items:center; gap:12px; transition:transform .3s; }
+        .logo-container:hover { transform:scale(1.05); }
+        .logo-container img {
+            height:45px; width:45px; border-radius:50%;
+            object-fit:cover; border:2px solid var(--rojo);
+            box-shadow:0 0 12px rgba(255,75,110,.4);
+        }
+        .logo-text {
+            font-size:1.8rem; font-weight:800;
+            background:linear-gradient(45deg,#fff,var(--texto));
+            -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+        }
+        .nav-links { display:flex; gap:8px; flex-wrap:wrap; }
+        .nav-links a {
+            color:var(--texto); font-weight:600; font-size:.95rem;
+            padding:9px 16px; border-radius:30px; transition:all .3s;
+        }
+        .nav-links a:hover {
+            background:rgba(255,255,255,.1); color:#fff;
+            transform:translateY(-2px);
+        }
+
+        /* CONTAINER */
+        .container { max-width:1200px; margin:0 auto; padding:60px 20px; width:100%; }
+
+        /* SECTIONS */
+        section {
+            margin-bottom:60px;
+            background:var(--glass); backdrop-filter:blur(10px);
+            padding:50px 40px; border-radius:24px;
+            border:1px solid var(--border);
+            box-shadow:0 20px 40px rgba(0,0,0,.3);
+            transition:transform .4s, box-shadow .4s;
+        }
+        section:hover { transform:translateY(-5px); box-shadow:0 25px 50px rgba(0,0,0,.4); }
+
+        h2 {
+            font-size:2.2rem; font-weight:800;
+            text-align:center; margin-bottom:20px;
+            background:linear-gradient(90deg,var(--rojo),var(--cyan));
+            -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+            display:inline-block; position:relative; left:50%; transform:translateX(-50%);
+        }
+        .section-desc {
+            text-align:center; font-size:1.1rem; color:var(--texto);
+            margin-bottom:40px; max-width:800px;
+            margin-inline:auto; line-height:1.7;
+        }
+
+        /* HERO */
+        .hero {
+            text-align:center; padding:90px 40px;
+            background:linear-gradient(135deg,rgba(28,37,65,.85),rgba(11,19,43,.95));
+            display:flex; flex-direction:column; align-items:center;
+        }
+        .hero h1 {
+            font-size:4.5rem; font-weight:800;
+            background:linear-gradient(to right,#fff,var(--cyan));
+            -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+            margin-bottom:20px;
+            animation:fadeDown 1s ease-out;
+        }
+        .motto {
+            font-size:1.9rem; font-weight:300; color:var(--rojo);
+            animation:fadeUp 1s ease-out .3s both;
+        }
+        .hero-sub {
+            font-size:1.2rem; color:var(--texto); margin-top:25px;
+            max-width:680px; line-height:1.7;
+            animation:fadeUp 1s ease-out .6s both;
+        }
+
+        /* CARDS */
+        .grid-2 { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:25px; }
+        .grid-3 { display:grid; grid-template-columns:repeat(auto-fit,minmax(270px,1fr)); gap:25px; }
+        .card {
+            background:rgba(255,255,255,.03); border:1px solid var(--border);
+            padding:35px 25px; border-radius:20px;
+            transition:all .4s cubic-bezier(.175,.885,.32,1.275);
+            display:flex; flex-direction:column; position:relative; overflow:hidden;
+        }
+        .card::before {
+            content:''; position:absolute; top:0; left:0; width:100%; height:4px;
+            background:linear-gradient(90deg,var(--rojo),var(--cyan));
+            transform:scaleX(0); transform-origin:left; transition:transform .4s;
+        }
+        .card:hover { transform:translateY(-10px); background:rgba(255,255,255,.07); box-shadow:0 15px 30px rgba(0,0,0,.4); }
+        .card:hover::before { transform:scaleX(1); }
+        .card h3 { color:var(--cyan); font-size:1.4rem; margin-bottom:12px; }
+        .card p { color:var(--texto); line-height:1.7; font-weight:300; }
+
+        /* CARD COLOR OVERRIDES */
+        .card-b { border-top:4px solid #fff; }
+        .card-b h3 { color:#fff !important; text-shadow:0 0 10px rgba(255,255,255,.4); }
+        .card-c { border-top:4px solid var(--cyan); }
+        .card-c h3 { color:var(--cyan) !important; text-shadow:0 0 10px rgba(0,240,255,.4); }
+        .card-r { border-top:4px solid var(--rojo); }
+        .card-r h3 { color:var(--rojo) !important; text-shadow:0 0 10px rgba(255,75,110,.4); }
+
+        /* 3D VIEWER */
+        #viewer-wrap {
+            width:100%; height:520px;
+            border-radius:20px;
+            overflow:hidden; position:relative;
+            border:1px solid var(--border);
+            box-shadow:0 0 40px rgba(0,240,255,.15);
+        }
+        #viewer-wrap iframe {
+            width:100%; height:100%; border:none; display:block;
+        }
+        .viewer-hint { text-align:center; margin-top:14px; font-size:.9rem; color:var(--cyan); opacity:.85; }
+
+        /* GAME */
+        .game-arena { display:flex; flex-direction:column; align-items:center; gap:28px; }
+        .game-choices { display:flex; gap:18px; flex-wrap:wrap; justify-content:center; }
+        .game-btn {
+            background:linear-gradient(135deg,var(--azul-med),var(--azul-claro));
+            color:#fff; border:1px solid var(--border);
+            padding:14px 32px; font-size:1.15rem; font-weight:600;
+            border-radius:50px; cursor:pointer; transition:all .3s;
+            box-shadow:0 5px 15px rgba(0,0,0,.2);
+        }
+        .game-btn:hover {
+            transform:translateY(-5px) scale(1.06);
+            background:linear-gradient(135deg,var(--rojo),#ff2a55);
+            box-shadow:0 15px 25px rgba(255,75,110,.4);
+        }
+        .game-btn:active { transform:translateY(2px); }
+        .game-result {
+            background:rgba(0,0,0,.35); backdrop-filter:blur(10px);
+            padding:28px; border-radius:20px; text-align:center;
+            width:100%; max-width:420px; border:1px solid var(--border);
+        }
+        .game-result p { font-size:1.1rem; margin:8px 0; }
+        .reset-btn {
+            background:linear-gradient(90deg,var(--rojo),#ff7a8a);
+            color:#fff; border:none; padding:11px 28px;
+            border-radius:30px; font-weight:700; font-size:1rem;
+            cursor:pointer; margin-top:18px; transition:all .3s;
+        }
+        .reset-btn:hover { transform:translateY(-3px); box-shadow:0 10px 20px rgba(255,75,110,.5); }
+
+        /* AUTHORS */
+        .author-card { display:flex; flex-direction:column; align-items:center; text-align:center; padding:35px 20px; }
+        .author-img {
+            width:140px; height:140px; border-radius:50%; object-fit:cover;
+            margin-bottom:22px;
+            box-shadow:0 0 0 4px var(--azul-prof), 0 0 0 7px var(--cyan), 0 12px 25px rgba(0,0,0,.5);
+            transition:all .5s;
+        }
+        .author-card:hover .author-img {
+            transform:scale(1.1) rotate(5deg);
+            box-shadow:0 0 0 4px var(--azul-prof), 0 0 0 7px var(--rojo), 0 18px 30px rgba(255,75,110,.4);
+        }
+        .author-card h4 { font-size:1.25rem; margin-bottom:7px; }
+        .author-card p { color:var(--cyan); font-size:.85rem; text-transform:uppercase; letter-spacing:1px; }
+
+        /* FOOTER */
+        footer {
+            background:rgba(11,19,43,.95); border-top:1px solid var(--border);
+            text-align:center; padding:28px; margin-top:auto;
+            color:var(--texto); font-size:.95rem; font-weight:300;
+        }
+
+        /* ANIMATIONS */
+        @keyframes fadeDown  { from{opacity:0;transform:translateY(-30px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes fadeUp    { from{opacity:0;transform:translateY(30px)}  to{opacity:1;transform:translateY(0)} }
+        @keyframes spin      { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+
+        /* RESPONSIVE */
+        @media(max-width:768px){
+            .navbar{flex-direction:column;padding:15px;}
+            .nav-links{justify-content:center;margin-top:12px;}
+            .hero h1{font-size:3rem;}
+            .motto{font-size:1.4rem;}
+            section{padding:30px 18px;}
+            h2{font-size:1.8rem;}
+        }
+    </style>
+</head>
+<body>
+
+    <!-- NAVBAR -->
+    <nav class="navbar">
+        <div class="logo-container">
+            <img src="logo 3.jpg" alt="Logo mirupegs">
+            <span class="logo-text">mirupegs</span>
+        </div>
+        <div class="nav-links">
+            <a href="#inicio">Inicio</a>
+            <a href="#proyecto">Proyecto</a>
+            <a href="#modelo3d">Robot 3D</a>
+            <a href="#sensores">Tecnología</a>
+            <a href="#colores">Colores</a>
+            <a href="#interactivo">Juego</a>
+            <a href="#autores">Autores</a>
+        </div>
+    </nav>
+
+    <div class="container">
+
+        <!-- HERO -->
+        <section id="inicio" class="hero">
+            <h1>mirupegs</h1>
+            <div class="motto">💡 "Cuidando el descanso con tecnología" 💙</div>
+            <p class="hero-sub">
+                Un robot inteligente diseñado para monitorear y regular el <strong>ritmo circadiano</strong> 
+                y la calidad del sueño de niños y adultos mayores.
+            </p>
+        </section>
+
+        <!-- PROYECTO -->
+        <section id="proyecto">
+            <h2>🤖 El Robot mirupegs</h2>
+            <p class="section-desc">
+                <strong>mirupegs</strong> es un proyecto de robótica e innovación tecnológica cuyo objetivo principal 
+                es monitorear y controlar el <strong>ritmo circadiano</strong> — el ciclo natural de sueño y vigilia — 
+                en personas vulnerables como niños y adultos mayores.
+                <br><br>
+                A través de una red de sensores integrados en el robot, el sistema analiza el entorno de la habitación 
+                en tiempo real: luz, temperatura, movimiento y sonido. Con base en estos datos, emite señales visuales 
+                mediante luces de colores que comunican el estado del ambiente y la calidad del descanso, 
+                permitiendo a los cuidadores actuar a tiempo y garantizar un sueño saludable.
+            </p>
+        </section>
+
+        <!-- MODELO 3D -->
+        <section id="modelo3d">
+            <h2>🤖 Conoce el Robot en 3D</h2>
+            <p class="section-desc">Explora el diseño de mirupegs. Arrástrate para girar, scroll para hacer zoom.</p>
+            <div id="viewer-wrap">
+                <iframe
+                    title="Chao 3D model"
+                    allowfullscreen
+                    mozallowfullscreen="true"
+                    webkitallowfullscreen="true"
+                    allow="autoplay; fullscreen; xr-spatial-tracking"
+                    src="https://sketchfab.com/models/075a8ccd173d470186d677aa5be14c03/embed?autostart=1&ui_theme=dark&ui_infos=0&ui_watermark=0&ui_watermark_link=0&camera=0"
+                ></iframe>
+            </div>
+            <p class="viewer-hint">🖱️ Clic + arrastrar para rotar &nbsp;·&nbsp; Scroll para zoom &nbsp;·&nbsp; Interactivo en tiempo real</p>
+        </section>
+
+        <!-- SENSORES -->
+        <section id="sensores">
+            <h2>📡 Sensores para un Sueño Perfecto</h2>
+            <p class="section-desc">El robot usa componentes de alta precisión para capturar los factores que afectan el descanso.</p>
+            <div class="grid-2">
+                <div class="card">
+                    <h3>🔦 Sensor de Luz</h3>
+                    <p>Monitorea la iluminación de la habitación. Detecta si el nivel de luz interfiere con la producción de melatonina y el mantenimiento del ritmo circadiano natural.</p>
+                </div>
+                <div class="card">
+                    <h3>🌡️ Sensor Temperatura/Humedad (LM35)</h3>
+                    <p>Mide continuamente el clima del cuarto. Garantiza que la temperatura sea óptima para el descanso y previene despertares por exceso de calor o frío.</p>
+                </div>
+                <div class="card">
+                    <h3>🏃 Sensor de Movimiento (PIR)</h3>
+                    <p>Detecta movimiento físico mediante infrarrojos pasivos. Alerta si un niño o adulto mayor se levanta durante la madrugada o tiene un sueño muy inquieto.</p>
+                </div>
+                <div class="card">
+                    <h3>🗣️ Sensor de Sonido (KY-037)</h3>
+                    <p>Capta ruidos en la habitación. Detecta ronquidos, llantos, llamados de auxilio o ruidos externos que puedan estar interrumpiendo la calidad del sueño.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- COLORES -->
+        <section id="colores">
+            <h2>🎨 Comunicación Visual del Robot</h2>
+            <p class="section-desc">mirupegs comunica el estado del ambiente de descanso mediante un sistema de luces de colores intuitivo.</p>
+            <div class="grid-3">
+                <div class="card card-b">
+                    <h3>⚪ Blanco</h3>
+                    <p><strong>Sueño Saludable.</strong> El ambiente está perfectamente monitoreado y la persona descansa en condiciones óptimas para el ritmo circadiano.</p>
+                </div>
+                <div class="card card-c">
+                    <h3>🔵 Azul</h3>
+                    <p><strong>Inducción al Sueño.</strong> Ambiente relajante y propicio para dormir. El ciclo de sueño fluye con normalidad y sin interrupciones.</p>
+                </div>
+                <div class="card card-r">
+                    <h3>🔴 Rojo</h3>
+                    <p><strong>Alerta.</strong> El robot detectó alteraciones (ruido, luz repentina, temperatura extrema) o que la persona se levantó y puede necesitar asistencia.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- JUEGO -->
+        <section id="interactivo">
+            <h2>🕹️ Zona Interactiva</h2>
+            <p class="section-desc">Mientras mirupegs cuida el sueño de tus seres queridos, ¡diviértete con este minijuego!</p>
+            <div class="game-arena">
+                <div class="game-choices">
+                    <button class="game-btn" onclick="playGame('Piedra')">🪨 Piedra</button>
+                    <button class="game-btn" onclick="playGame('Papel')">📄 Papel</button>
+                    <button class="game-btn" onclick="playGame('Tijera')">✂️ Tijera</button>
+                </div>
+                <div class="game-result" id="gameResult">
+                    <p>¡Elige tu jugada!</p>
+                    <p style="opacity:.75;font-size:.95rem;">Tú vs Máquina</p>
+                    <button class="reset-btn" onclick="resetGame()">Reiniciar Marcador</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- AUTORES -->
+        <section id="autores">
+            <h2>👨‍💻 Equipo Desarrollador</h2>
+            <p class="section-desc">Las mentes creativas responsables del robot mirupegs.</p>
+            <div class="grid-3">
+                <div class="card author-card">
+                    <img src="luj.jpg" alt="Luciana Jaramillo Ospina" class="author-img">
+                    <h4>Luciana Jaramillo Ospina</h4>
+                    <p>Desarrolladora</p>
+                </div>
+                <div class="card author-card">
+                    <img src="luh2.jpg" alt="Luciana Hernandez Reyes" class="author-img">
+                    <h4>Luciana Hernandez Reyes</h4>
+                    <p>Desarrolladora</p>
+                </div>
+                <div class="card author-card">
+                    <img src="yesid.jpg" alt="Yesid Ecker Ochoa" class="author-img">
+                    <h4>Yesid Ecker Ochoa</h4>
+                    <p>Desarrollador</p>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <footer>
+        <p>&copy; 2026 mirupegs &mdash; Cuidando el descanso con tecnología.</p>
+    </footer>
+
+    <script>
+        /* ===================== JUEGO ===================== */
+        var userScore = 0, compScore = 0;
+        function playGame(u) {
+            var opts = ['Piedra','Papel','Tijera'];
+            var c = opts[Math.floor(Math.random()*3)];
+            var r = u===c ? '¡Empate!' :
+                ((u==='Piedra'&&c==='Tijera')||(u==='Papel'&&c==='Piedra')||(u==='Tijera'&&c==='Papel'))
+                ? (userScore++,'¡Ganaste!') : (compScore++,'¡Perdiste!');
+            document.getElementById('gameResult').innerHTML =
+                '<p>👤 Tú: <strong>'+u+'</strong> | 🤖 Máquina: <strong>'+c+'</strong></p>'+
+                '<p style="font-size:1.5rem;font-weight:800;margin:12px 0;color:var(--cyan)">'+r+'</p>'+
+                '<p>🏆 Tú: <strong>'+userScore+'</strong> | Máquina: <strong>'+compScore+'</strong></p>'+
+                '<button class="reset-btn" onclick="resetGame()">Reiniciar Marcador</button>';
+        }
+        function resetGame() {
+            userScore = 0; compScore = 0;
+            document.getElementById('gameResult').innerHTML =
+                '<p>¡Elige tu jugada!</p>'+
+                '<p style="opacity:.75;font-size:.95rem;">Tú vs Máquina</p>'+
+                '<button class="reset-btn" onclick="resetGame()">Reiniciar Marcador</button>';
+        }
+
+
+    </script>
+</body>
+</html>
